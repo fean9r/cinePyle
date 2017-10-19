@@ -12,9 +12,8 @@ class TestGoogleCalendar(unittest.TestCase):
     """Basic test cases."""
 
     def test_my_class(self):
-        c = cinepyle.calendars.GoogleCalendar()
+        c = cinepyle.calendar.CalendarManager()
         self.assertEqual(c.test(), True)
         
-
 if __name__ == '__main__':
     unittest.main()

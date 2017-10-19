@@ -1,9 +1,8 @@
 '''
-Created on Sep 17, 2017
+Created on Oct 20, 2017
 
 @author: fean9r
 '''
-
 
 from __future__ import print_function
 import httplib2
@@ -71,9 +70,52 @@ class GoogleCalendar(object):
         return credentials
     
     def getEvents(self, time_1 , time_2):
-        print('Getting the upcoming events, ', time_1 , time_2)
+        print("Getting the upcoming events from: %s to %s."% (time_1 , time_2))
         eventsResult = self.service.events().list(
         calendarId='primary', timeMin=time_1, timeMax=time_2, singleEvents=True,
         orderBy='startTime').execute()
         return eventsResult.get('items', [])
 
+
+
+from model import Activity
+import dateutil.parser
+import time
+
+
+def make_internal_time(g_time):
+
+    date = dateutil.parser.parse(g_time)
+    return int(time.mktime(date.timetuple()))
+    
+
+class CalendarManager(object):
+    '''
+    classdocs
+    '''
+
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        self.calendar = GoogleCalendar()
+        
+    def retreiveEvents(self, time_1 , time_2):
+        activities = []
+        
+        events = self.calendar.getEvents(time_1 , time_2)
+        if not events:
+            print('No upcoming events found.')
+        for event in events:
+            start = make_internal_time(event['start'].values()[0])
+            end = make_internal_time(event['end'].values()[0])
+            act = Activity(event['summary'],start, end,0)
+            activities.append(act)            
+        return activities
+    
+    def write_cvs(self, header, lines, file_name ='calendar.cvs' ):
+        cv_out = header
+        for line in lines:
+            cv_out += line
+        with open(file_name, 'w') as cvs_file:
+            cvs_file.write(cv_out)
