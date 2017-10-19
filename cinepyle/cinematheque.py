@@ -1,50 +1,25 @@
 '''
-Created on Oct 4, 2017
+Created on Oct 19, 2017
 
 @author: fean9r
 '''
 import locale
 from lxml import html
-import time
 import requests
 
-#from .utils import ProgressBar
-import timeit
+from .utils import ProgressBar
 
-class ProgressBar():
-    def __init__(self, tot):   
-        self.RedrawFrequency = 10.0
-        self.elem_for_redraw = tot / self.RedrawFrequency
-        self.i_progress = 0
-        self.perc_bar = self.elem_for_redraw
-        self.tot= tot/100.0
-        self.times = [0,0]
-          
-    def clear(self):
-        self.i_progress = 0
-        self.perc_bar = self.RedrawFrequency
+def extract_director(l_directors):
+    if len(l_directors) > 1:
+        raise Exception("bau")
+    name = l_directors[0]
     
-    def __getPercProgress(self):
-        return self.i_progress/self.tot
-    
-    def progress(self):
-        
-        if self.i_progress == 0 :
-            self.times[0] = timeit.default_timer()
-        
-        self.i_progress += 1
-        
-        if self.i_progress >= self.perc_bar:
-            self.perc_bar += self.elem_for_redraw
-            self.times[1] = timeit.default_timer()
-            duration = self.times[1] - self.times[0]
-            perc_progress = self.__getPercProgress()
-            estimate_final_duration = duration/(perc_progress + 0.0) * 100
-            remaining = estimate_final_duration-duration            
-            print ("\tExecution at %4.1f%% done. Elapsed: %6.2fs. Remaining: %6.2fs." % (perc_progress, duration, remaining))   
-
-    def getTime(self):
-        return self.times[1] - self.times[0]
+    if ', ' in name:
+        name = name.split(', ',1)[0]
+    if  ' et ' in name:
+        name = name.split(' et ',1)[0]
+    #print l_directors, ' ==> ', name
+    return  name
 
 def scrape_cinematheque_films(url_to_scrape):
     locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -90,7 +65,7 @@ def scrape_cinematheque_films(url_to_scrape):
             ++i
             l_realisateur = film.xpath('span[@class="realisateur"]/text()')
             if len(l_realisateur) >= 1:
-                realisateur = l_realisateur[0]
+                realisateur = extract_director(l_realisateur)
             
             # Calendar_box Parsing stage
             ++i
@@ -131,8 +106,7 @@ def scrape_cinematheque_films(url_to_scrape):
          
     return shows_activities
 
-
-class CinemqthequeCalendar(object):
+class GeneralCalendar(object):
     '''
     classdocs
     '''
@@ -149,3 +123,31 @@ class CinemqthequeCalendar(object):
         # http://www.cinematheque.fr/calendrier/11-2017.html
         seances = scrape_cinematheque_films(self.cine_calendar_base_url + month + '.html')
         return seances
+
+from .model import Show
+from .utils import with_pickle
+import time
+
+def compute_months(time_1 , time_2):
+    #TODO: Make this method
+    months = [] 
+    months.append('11-2017')
+    return months
+
+def make_show(event):
+    start = int(time.mktime(time.strptime(event['start'], '%Y-%m-%d %H:%M:%S')))
+    end = int(time.mktime(time.strptime(event['end'], '%Y-%m-%d %H:%M:%S'))) 
+    title = event['title']#show_title.encode('utf-8')
+    director = event['director'] #realisateur.encode('utf-8')
+    timezone = event['timezone']
+    return Show(title, start, end , 0 ,director )
+
+@with_pickle
+def retreive_seances(start, end):
+    calendar = GeneralCalendar()
+    all_seances= []
+    # depending on the months between start and end
+    months = compute_months(start, end)
+    for month in months:
+            all_seances += map(lambda x:make_show(x), calendar.getEvents(month))
+    return all_seances
