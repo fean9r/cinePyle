@@ -11,9 +11,9 @@ class MovieRatingAssigner(object):
     Implementation of RatingAssigner.
     """
 
-    def __init__(self):
+    def __init__(self, directors):
         self.ia = IMDb()
-        self.director_to_films = {}
+        self.director_to_films = self.fetch_directors(directors)
     
     def fetch_movie_by_name(self, film_name, director_name):
         if director_name == '' or film_name == '':
@@ -32,7 +32,7 @@ class MovieRatingAssigner(object):
                 else :
                     print '\t\tOther director found:', director , 'continuing..'
         return None
-    
+            
     @utils.with_pickle
     def fetch_directors(self, directors):
         director_to_films = {}
@@ -85,8 +85,7 @@ class MovieRatingAssigner(object):
 
 @utils.with_pickle
 def assign_movie_rating(seances):
-    assigner = MovieRatingAssigner() 
-    assigner.fetch_directors([show.director for show in seances])
+    assigner = MovieRatingAssigner([show.director for show in seances]) 
     rated_films = []
     print '## We have', len(seances), 'films to rate!'
     pbar = utils.ProgressBar(len(seances))
