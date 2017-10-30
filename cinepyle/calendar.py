@@ -29,15 +29,16 @@ class GoogleCalendar(object):
     CLIENT_SECRET_FILE = 'credential/client_secret.json'
     APPLICATION_NAME = 'Google Calendar API Python Quickstart'
     
-    def __init__(self):
+    def __init__(self, calendars_to_ids):
         '''
         Constructor
         '''
-        credentials = self.get_credentials()
+        credentials = self.getCredentials()
         http = credentials.authorize(httplib2.Http())
         self.service = discovery.build('calendar', 'v3', http=http)
+        self.calendars_to_ids = calendars_to_ids
     
-    def get_credentials(self):
+    def getCredentials(self):
         """Gets valid user credentials from storage.
     
         If nothing has been stored, or if the stored credentials are invalid,
@@ -69,25 +70,28 @@ class GoogleCalendar(object):
             print('Storing credentials to ' + credential_path)
         return credentials
     
-    def getEvents(self, time_1 , time_2):
-        print("Getting the upcoming events from: %s to %s."% (time_1 , time_2))
-        eventsResult = self.service.events().list(
-        calendarId='primary', timeMin=time_1, timeMax=time_2, singleEvents=True,
-        orderBy='startTime').execute()
-        return eventsResult.get('items', [])
+    def printCalendars(self):
+        my_calendars = self.service.calendarList().list().execute()
+        for cal in my_calendars['items']:
+            print (cal['summary'] , cal['id'])
+    
+    def getEvents(self, start , end):
+        print("Getting the upcoming events from: %s to %s."% (start , end))
+        events_result = []
+        for cal_id in self.calendars_to_ids.values():
+            events_result += self.service.events().list(
+                calendarId=cal_id, timeMin=start, timeMax=end, singleEvents=True,
+                orderBy='startTime').execute().get('items', [])
+        return events_result
 
-
-
-from model import Activity
+from opchoice import model
+from .model import Activity
 import dateutil.parser
 import time
 
-
 def make_internal_time(g_time):
-
     date = dateutil.parser.parse(g_time)
     return int(time.mktime(date.timetuple()))
-    
 
 class CalendarManager(object):
     '''
@@ -98,24 +102,38 @@ class CalendarManager(object):
         '''
         Constructor
         '''
-        self.calendar = GoogleCalendar()
+        calendars_to_ids= {
+                            'Iacopo Breschi G' :'primary',
+                            'Lapo & Lisa'      :'prpbnbms11adra74lhi7q9mee4@group.calendar.google.com',
+                            'Work'             :'07q9ft47r02q56sid2fub34dtc@group.calendar.google.com'
+                        }
+        self.calendar = GoogleCalendar(calendars_to_ids)
         
     def retreiveEvents(self, time_1 , time_2):
         activities = []
-        
         events = self.calendar.getEvents(time_1 , time_2)
         if not events:
             print('No upcoming events found.')
-        for event in events:
-            start = make_internal_time(event['start'].values()[0])
-            end = make_internal_time(event['end'].values()[0])
-            act = Activity(event['summary'],start, end,0)
-            activities.append(act)            
+        for event_i in events:
+            title = event_i['summary']
+            start = make_internal_time(event_i['start']['dateTime'] if event_i['start'].has_key('dateTime') else event_i['start']['date'])
+            end   = make_internal_time(event_i['end']['dateTime'] if event_i['end'].has_key('dateTime') else event_i['end']['date'])  
+            activities.append(Activity(title, start, end, 0))            
         return activities
     
-    def write_cvs(self, header, lines, file_name ='calendar.cvs' ):
-        cv_out = header
-        for line in lines:
-            cv_out += line
-        with open(file_name, 'w') as cvs_file:
-            cvs_file.write(cv_out)
+def write_cvs(events, file_name ='calendar.cvs' ):
+    header = 'Subject,Start Date,Start Time,End Date,End Time,Description,Location\n'
+    cv_out = header
+    for event in events:
+        cv_out += event.name +','+event.interval.start_date() +','+event.interval.start_time()+','+event.interval.end_date() +','+event.interval.end_time()+','+event.director+' IMDb Rating:'+str(event.value)+','+'Cinematheque' '\n'
+        #+','+event.interval.start_date()+','+event.interval.start_time()+','+event.interval.end_date()+','+event.interval.end_time()+','+event.director+' IMDb Rating',event.value,','+'Cinematheque'
+    print (cv_out)
+    #with open(file_name, 'w') as cvs_file:
+    #    cvs_file.write(cv_out)
+            
+def filter_overlapping_events(confirmed_events, unconfirmed_events):
+    print ('Starting with', len(unconfirmed_events), 'activities before busy periods filtering.') 
+    for event in confirmed_events:
+        unconfirmed_events = filter(lambda x: None if (model.overlap(x.interval, event.interval)) else x, unconfirmed_events)
+    print ('Remaining', len(unconfirmed_events), 'activities after busy periods filtering.')
+    return unconfirmed_events
