@@ -75,12 +75,12 @@ class GoogleCalendar(object):
         for cal in my_calendars['items']:
             print (cal['summary'] , cal['id'])
     
-    def getEvents(self, start , end):
+    def getEvents(self, start, end):
         print("Getting the upcoming events from: %s to %s."% (start , end))
         events_result = []
         for cal_id in self.calendars_to_ids.values():
             events_result += self.service.events().list(
-                calendarId=cal_id, timeMin=start, timeMax=end, singleEvents=True,
+                calendarId=cal_id, timeMin=start.isoformat(), timeMax=end.isoformat(), singleEvents=True,
                 orderBy='startTime').execute().get('items', [])
         return events_result
 
@@ -109,9 +109,9 @@ class CalendarManager(object):
                         }
         self.calendar = GoogleCalendar(calendars_to_ids)
         
-    def retreiveEvents(self, time_1 , time_2):
+    def retreiveEvents(self, retrive_start , retrive_end):
         activities = []
-        events = self.calendar.getEvents(time_1 , time_2)
+        events = self.calendar.getEvents(retrive_start , retrive_end)
         if not events:
             print('No upcoming events found.')
         for event_i in events:

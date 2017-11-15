@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on Jun 16, 2016
 
@@ -10,11 +11,12 @@ from cinepyle import rating
 from opchoice import scheduler
 
 import datetime
+import pytz
 
 def __main__():
-    start = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
-    end = datetime.datetime.strptime('2017-12-31','%Y-%m-%d').isoformat() + 'Z'
-    
+    start = datetime.datetime.now(tz=pytz.utc)
+    end = datetime.datetime(2017, 12, 31, tzinfo=pytz.utc)
+
     # Fill the Agenda with your events
     personal_calendar = calendar.CalendarManager()
     events = personal_calendar.retreiveEvents(start, end)
@@ -30,14 +32,11 @@ def __main__():
     
     # Set the decision constraints 
     constraints = scheduler.SchedulerConstraints()
-#    constraints.add_rating_function(rating_assigner.rate_one)
-#    constraints.add_time_constraints(events)
     constraints.max_activity_by_day = 1
     constraints.max_activity_by_week = 3
-    #TODO: DO NOT WORK
-    constraints.add_activity_to_avoid("The Pianist")
-    constraints.add_activity_to_perfom("")
-     
+    constraints.addActivityToAvoid("The Pianist")
+    constraints.addActivityToPerform("The Ghost Writer")
+
     # Get the best cinematheque_shows with my agenda and decision params
     decision_maker = scheduler.Scheduler(constraints)
     best_shows = decision_maker.make_decision(rated_seances)

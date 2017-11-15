@@ -28,7 +28,7 @@ def scrape_cinematheque_films(url_to_scrape):
     errorMap = {
             0:'film parsing error',
             1:'realisateur parsing error',
-            2:'calendar_box parsing error ',
+            2:'calendar_box parsing error',
             3:'original_title parsing error',
             4:'date_start parsing error',
             5:'date_end parsing error',
@@ -62,30 +62,30 @@ def scrape_cinematheque_films(url_to_scrape):
             film = show_tree.xpath('//div[@class="film"]')[0]
             
             # Realisateur Parsing stage
-            ++i
+            i=i+1
             l_realisateur = film.xpath('span[@class="realisateur"]/text()')
             if len(l_realisateur) >= 1:
                 realisateur = extract_director(l_realisateur)
             
             # Calendar_box Parsing stage
-            ++i
+            i=i+1
             calendar_box = show_tree.xpath('//var[@class="atc_event"]')[0]
             
             # original_title Parsing stage
-            ++i
+            i=i+1
             l_original_title = show_tree.xpath('//span[@class="sub custom-text-color-light"]/text()')
             french_title = calendar_box.xpath('var[@class="atc_title"]/text()')[0]
             
-            ++i
+            i=i+1
             if len(l_original_title) >= 1:
                 show_title = l_original_title[0]
             else:
                 show_title = french_title
             
             date_start = calendar_box.xpath('var[@class="atc_date_start"]/text()')[0]
-            ++i
+            i=i+1
             date_end = calendar_box.xpath('var[@class="atc_date_end"]/text()')[0]
-            ++i
+            i=i+1
             timezone = calendar_box.xpath('var[@class="atc_timezone"]/text()')[0]
 
             show_map['title'] = show_title.encode('utf-8')
@@ -96,7 +96,7 @@ def scrape_cinematheque_films(url_to_scrape):
             
             shows_activities.append(show_map)
         except IndexError:
-            print errorMap[i] , ' ' , url , realisateur , show_title , date_start , date_end
+            print errorMap[i], url, realisateur, show_title, date_start, date_end
             # ++numer_of_error
             # Past shows dont have calendar_box.
             pbar.progress()
@@ -119,8 +119,6 @@ class GeneralCalendar(object):
 
     def getEvents(self, month):
         print("Getting the upcoming events for period: %s " % month)
-        # this is the format of the cine month calendar url
-        # http://www.cinematheque.fr/calendrier/11-2017.html
         seances = scrape_cinematheque_films(self.cine_calendar_base_url + month + '.html')
         return seances
 
@@ -128,11 +126,11 @@ from .model import Show
 from .utils import with_pickle
 import time
 
-def compute_months(time_1 , time_2):
-    #TODO: Make this method
-    months = [] 
-    months.append('11-2017')
-    return months
+from dateutil.rrule import rrule, MONTHLY
+
+def compute_months(strt_dt , end_dt):
+    dates = [str(dt.month)+"-"+str(dt.year) for dt in rrule(MONTHLY, dtstart=strt_dt, until=end_dt)]
+    return dates
 
 def make_show(event):
     start = int(time.mktime(time.strptime(event['start'], '%Y-%m-%d %H:%M:%S')))
@@ -148,6 +146,6 @@ def retreive_seances(start, end):
     all_seances= []
     # depending on the months between start and end
     months = compute_months(start, end)
-    for month in months:
-            all_seances += map(lambda x:make_show(x), calendar.getEvents(month))
+    for m_i in months:
+        all_seances += map(lambda x:make_show(x), calendar.getEvents(m_i))
     return all_seances
