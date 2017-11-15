@@ -53,7 +53,8 @@ def scrape_cinematheque_films(url_to_scrape):
         show_map = {}
         
         realisateur = ''
-        show_title = ''
+        common_title = ''
+        original_title = ''
         date_start = ''
         date_end = ''
         try:
@@ -73,14 +74,14 @@ def scrape_cinematheque_films(url_to_scrape):
             
             # original_title Parsing stage
             i=i+1
+            common_title = calendar_box.xpath('var[@class="atc_title"]/text()')[0]
             l_original_title = show_tree.xpath('//span[@class="sub custom-text-color-light"]/text()')
-            french_title = calendar_box.xpath('var[@class="atc_title"]/text()')[0]
             
             i=i+1
             if len(l_original_title) >= 1:
-                show_title = l_original_title[0]
+                original_title = l_original_title[0]
             else:
-                show_title = french_title
+                original_title = common_title
             
             date_start = calendar_box.xpath('var[@class="atc_date_start"]/text()')[0]
             i=i+1
@@ -88,7 +89,8 @@ def scrape_cinematheque_films(url_to_scrape):
             i=i+1
             timezone = calendar_box.xpath('var[@class="atc_timezone"]/text()')[0]
 
-            show_map['title'] = show_title.encode('utf-8')
+            show_map['title'] = common_title.encode('utf-8')
+            show_map['original_title'] = original_title.encode('utf-8')
             show_map['start'] = date_start
             show_map['end'] = date_end
             show_map['timezone'] = timezone
@@ -96,7 +98,7 @@ def scrape_cinematheque_films(url_to_scrape):
             
             shows_activities.append(show_map)
         except IndexError:
-            print errorMap[i], url, realisateur, show_title, date_start, date_end
+            print errorMap[i], url, realisateur, common_title, date_start, date_end
             # ++numer_of_error
             # Past shows dont have calendar_box.
             pbar.progress()
@@ -136,9 +138,10 @@ def make_show(event):
     start = int(time.mktime(time.strptime(event['start'], '%Y-%m-%d %H:%M:%S')))
     end = int(time.mktime(time.strptime(event['end'], '%Y-%m-%d %H:%M:%S'))) 
     title = event['title']#show_title.encode('utf-8')
+    orig_title = event['original_title']#show_title.encode('utf-8')
     director = event['director'] #realisateur.encode('utf-8')
     timezone = event['timezone']
-    return Show(title, start, end , 0 ,director )
+    return Show(title, orig_title, start, end, 0, director)
 
 @with_pickle
 def retreive_seances(start, end):
