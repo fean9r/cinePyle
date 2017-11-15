@@ -34,8 +34,30 @@ def __main__():
     constraints = scheduler.SchedulerConstraints()
     constraints.max_activity_by_day = 1
     constraints.max_activity_by_week = 3
-    constraints.addActivityToAvoid("The Pianist")
-    constraints.addActivityToPerform("The Ghost Writer")
+    
+    avoid_list = ["The Pianist", "My Darling Clementine"]
+    
+    for avoid in avoid_list:
+        constraints.addActivityToAvoid(avoid)
+
+    watch_list = ["L'Assassin habite au 21","Brasil / Le Corbeau", "Les Diaboliques",
+                  "Manon","Miquette et sa mère","Le Mystère Picasso",
+                  "Quai des Orfèvres","Le Salaire de la peur","Le 41e",
+                  "Aerograd","Alexandre Nevski","Le Chemin de la vie",
+                  "L'Enfance de Gorki","La Fièvre des échecs","La Grève",
+                  "Ivan le Terrible","La Jeunesse de Maxime","Kino-Nedelia",
+                  "Kino-Pravda n° 21 : un cinépoème sur Lénine","La Nouvelle Babylone","La Symphonie du Donbass",
+                  "Tarass l'indompté","Trois chants sur Lénine","Zvenigora"]
+    
+    for watch in watch_list :
+        found = 0
+        for film in seances:
+            if watch == film.name or  watch == film.original_title:
+                print "\tWatch",film.name, film.original_title
+                found = 1
+                constraints.addActivityToPerform(film.name)
+        if found == 0:
+            print "\tNot found", watch
 
     # Get the best cinematheque_shows with my agenda and decision params
     decision_maker = scheduler.Scheduler(constraints)
