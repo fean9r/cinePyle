@@ -15,7 +15,7 @@ import pytz
 
 def __main__():
     start = datetime.datetime.now(tz=pytz.utc)
-    end = datetime.datetime(2017, 12, 31, tzinfo=pytz.utc)
+    end = datetime.datetime(2018, 2, 28, tzinfo=pytz.utc)
 
     # Fill the Agenda with your events
     personal_calendar = calendar.CalendarManager()
@@ -41,7 +41,7 @@ def __main__():
         constraints.addActivityToAvoid(avoid)
 
     watch_list = ["L'Assassin habite au 21","Brasil / Le Corbeau", "Les Diaboliques",
-                  "Manon","Miquette et sa mère","Le Mystère Picasso",
+                  "Manon","Miquette et sa mère","Le Mystère Picasso","Les Espions",
                   "Quai des Orfèvres","Le Salaire de la peur","Le 41e",
                   "Aerograd","Alexandre Nevski","Le Chemin de la vie",
                   "L'Enfance de Gorki","La Fièvre des échecs","La Grève",
