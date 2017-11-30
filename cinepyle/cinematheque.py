@@ -144,11 +144,13 @@ def make_show(event):
     return Show(title, orig_title, start, end, 0, director)
 
 @with_pickle
-def retreive_seances(start, end):
+def retreive_month_seances(month):
     calendar = GeneralCalendar()
+    return map(lambda x:make_show(x), calendar.getEvents(month))
+
+def retreive_seances(start, end):
     all_seances= []
-    # depending on the months between start and end
     months = compute_months(start, end)
     for m_i in months:
-        all_seances += map(lambda x:make_show(x), calendar.getEvents(m_i))
+        all_seances += retreive_month_seances (m_i) 
     return all_seances
