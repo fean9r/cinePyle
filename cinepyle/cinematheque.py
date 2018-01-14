@@ -53,7 +53,7 @@ def scrape_cinematheque_films(url_to_scrape):
         show_map = {}
         
         realisateur = ''
-        common_title = ''
+        cinemath_title = ''
         original_title = ''
         date_start = ''
         date_end = ''
@@ -89,7 +89,7 @@ def scrape_cinematheque_films(url_to_scrape):
             i=i+1
             timezone = calendar_box.xpath('var[@class="atc_timezone"]/text()')[0]
 
-            show_map['title'] = common_title.encode('utf-8')
+            show_map['cinemath_title'] = cinemath_title.encode('utf-8')
             show_map['original_title'] = original_title.encode('utf-8')
             show_map['start'] = date_start
             show_map['end'] = date_end
@@ -98,7 +98,7 @@ def scrape_cinematheque_films(url_to_scrape):
             
             shows_activities.append(show_map)
         except IndexError:
-            print errorMap[i], url, realisateur, common_title, date_start, date_end
+            print errorMap[i], url, realisateur, cinemath_title, date_start, date_end
             # ++numer_of_error
             # Past shows dont have calendar_box.
             pbar.progress()
@@ -137,11 +137,13 @@ def compute_months(strt_dt , end_dt):
 def make_show(event):
     start = int(time.mktime(time.strptime(event['start'], '%Y-%m-%d %H:%M:%S')))
     end = int(time.mktime(time.strptime(event['end'], '%Y-%m-%d %H:%M:%S'))) 
-    title = event['title']#show_title.encode('utf-8')
+    cine_title = event['cinemath_title']#show_title.encode('utf-8')
     orig_title = event['original_title']#show_title.encode('utf-8')
     director = event['director'] #realisateur.encode('utf-8')
     timezone = event['timezone']
-    return Show(title, orig_title, start, end, 0, director)
+    
+    print orig_title, cine_title
+    return Show(orig_title, cine_title, start, end, 0, director)
 
 @with_pickle
 def retreive_month_seances(month):
