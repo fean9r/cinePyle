@@ -67,7 +67,7 @@ class GoogleCalendar(object):
                 credentials = tools.run_flow(flow, store, flags)
             else:  # Needed only for compatibility with Python 2.6
                 credentials = tools.run(flow, store)
-            print('Storing credentials to ' + credential_path)
+            print ('Storing credentials to ' + credential_path)
         return credentials
     
     def printCalendars(self):
@@ -76,7 +76,7 @@ class GoogleCalendar(object):
             print (cal['summary'] , cal['id'])
     
     def getEvents(self, start, end):
-        print("Getting the upcoming events from: %s to %s."% (start , end))
+        print ("Getting the upcoming events from: %s to %s." % (start , end))
         events_result = []
         for cal_id in self.calendars_to_ids.values():
             events_result += self.service.events().list(
@@ -113,11 +113,11 @@ class CalendarManager(object):
         activities = []
         events = self.calendar.getEvents(retrive_start , retrive_end)
         if not events:
-            print('No upcoming events found.')
+            print ('No upcoming events found.')
         for event_i in events:
             title = event_i['summary']
-            start = make_internal_time(event_i['start']['dateTime'] if event_i['start'].has_key('dateTime') else event_i['start']['date'])
-            end   = make_internal_time(event_i['end']['dateTime'] if event_i['end'].has_key('dateTime') else event_i['end']['date'])  
+            start = make_internal_time(event_i['start']['dateTime'] if 'dateTime' in event_i['start'] else event_i['start']['date'])
+            end   = make_internal_time(event_i['end']['dateTime'] if 'dateTime' in event_i['end'] else event_i['end']['date'])  
             activities.append(Activity(title, start, end, 0))            
         return activities
     
@@ -134,6 +134,6 @@ def write_cvs(events, file_name ='calendar.cvs' ):
 def filter_overlapping_events(confirmed_events, unconfirmed_events):
     print ('Starting with', len(unconfirmed_events), 'activities before busy periods filtering.') 
     for event in confirmed_events:
-        unconfirmed_events = filter(lambda x: None if (model.overlap(x.interval, event.interval)) else x, unconfirmed_events)
+        unconfirmed_events = list(filter(lambda x: None if (model.overlap(x.interval, event.interval)) else x, unconfirmed_events))
     print ('Remaining', len(unconfirmed_events), 'activities after busy periods filtering.')
     return unconfirmed_events

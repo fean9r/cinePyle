@@ -15,12 +15,12 @@ import pytz
 
 def __main__():
     start = datetime.datetime.now(tz=pytz.utc)
-    end = datetime.datetime(2018, 2, 28, tzinfo=pytz.utc)
+    end = datetime.datetime(2018, 1, 28, tzinfo=pytz.utc)
 
     # Fill the Agenda with your events
     personal_calendar = calendar.CalendarManager()
     events = personal_calendar.retreiveEvents(start, end)
-    
+    print (events)
     # Retrive the activities 
     seances = cinematheque.retreive_seances(start, end)
 
@@ -53,16 +53,16 @@ def __main__():
         found = 0
         for film in seances:
             if watch == film.name or  watch == film.original_title:
-                print "\tWatch",film.name, film.original_title
+                print("\tWatch", film.name, film.original_title)
                 found = 1
                 constraints.addActivityToPerform(film.name)
         if found == 0:
-            print "\tNot found", watch
+            print("\tNot found", watch)
 
     # Get the best cinematheque_shows with my agenda and decision params
     decision_maker = scheduler.Scheduler(constraints)
     best_shows = decision_maker.make_decision(rated_seances)
-    print len(best_shows[0]),best_shows[1],  best_shows[1]/len(best_shows[0])
+    print(len(best_shows[0]), best_shows[1], best_shows[1] / len(best_shows[0]))
     
     # personal_calendar.push_events(best_shows)
     calendar.write_cvs(best_shows[0], "Cinematheque_films.cvs")

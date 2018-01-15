@@ -18,7 +18,6 @@ def extract_director(l_directors):
         name = name.split(', ',1)[0]
     if  ' et ' in name:
         name = name.split(' et ',1)[0]
-    #print l_directors, ' ==> ', name
     return  name
 
 def scrape_cinematheque_films(url_to_scrape):
@@ -40,9 +39,10 @@ def scrape_cinematheque_films(url_to_scrape):
     page = requests.get(url_to_scrape)
     tree = html.fromstring(page.content)
     
-    show_hrefs = map(lambda x: x.get('href'), tree.xpath('//a[@class="show"]'))
+    show_hrefs = list(map(lambda x: x.get('href'), tree.xpath('//a[@class="show"]')))
+    
     num_scraped_shows = len(show_hrefs)
-    print 'Scraped : ', num_scraped_shows, ' show references!'
+    print ('Scraped : ', num_scraped_shows, ' show references!')
     pbar = ProgressBar(num_scraped_shows)
     for href in show_hrefs:
         # http://www.cinematheque.fr/seance/25041.html
@@ -89,16 +89,16 @@ def scrape_cinematheque_films(url_to_scrape):
             i=i+1
             timezone = calendar_box.xpath('var[@class="atc_timezone"]/text()')[0]
 
-            show_map['cinemath_title'] = cinemath_title.encode('utf-8')
-            show_map['original_title'] = original_title.encode('utf-8')
+            show_map['cinemath_title'] = cinemath_title
+            show_map['original_title'] = original_title
             show_map['start'] = date_start
             show_map['end'] = date_end
             show_map['timezone'] = timezone
-            show_map['director'] = realisateur.encode('utf-8')
+            show_map['director'] = realisateur
             
             shows_activities.append(show_map)
         except IndexError:
-            print errorMap[i], url, realisateur, cinemath_title, date_start, date_end
+            print (errorMap[i], url, realisateur, cinemath_title, date_start, date_end)
             # ++numer_of_error
             # Past shows dont have calendar_box.
             pbar.progress()
@@ -137,18 +137,17 @@ def compute_months(strt_dt , end_dt):
 def make_show(event):
     start = int(time.mktime(time.strptime(event['start'], '%Y-%m-%d %H:%M:%S')))
     end = int(time.mktime(time.strptime(event['end'], '%Y-%m-%d %H:%M:%S'))) 
-    cine_title = event['cinemath_title']#show_title.encode('utf-8')
-    orig_title = event['original_title']#show_title.encode('utf-8')
-    director = event['director'] #realisateur.encode('utf-8')
+    cine_title = event['cinemath_title']
+    orig_title = event['original_title']
+    director = event['director']
     timezone = event['timezone']
     
-    print orig_title, cine_title
     return Show(orig_title, cine_title, start, end, 0, director)
 
 @with_pickle
 def retreive_month_seances(month):
     calendar = GeneralCalendar()
-    return map(lambda x:make_show(x), calendar.getEvents(month))
+    return list(map(lambda x:make_show(x), calendar.getEvents(month)))
 
 def retreive_seances(start, end):
     all_seances= []

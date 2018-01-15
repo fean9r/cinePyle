@@ -5,22 +5,30 @@ Created on Oct 11, 2017
 '''
 import hashlib
 from functools import wraps
-import os, pickle
+import os
+import dill as pickle
+
+def build_filename(func_name, args):
+    file_name = ""
+    
+    if len(args) > 1 :
+        file_name = type(args[0]).__name__ +"_"+ func_name +"_"+ hashlib.md5(str(args[1]).encode('utf-8')).hexdigest() +'.pkl'
+    else :
+        file_name = func_name +"_"+ hashlib.md5(str(args[0]).encode('utf-8')).hexdigest() +'.pkl'
+
+    return file_name
 
 def with_pickle(func):
     @wraps(func)
-    def wrap(*args):
+    def wrap(*args):        
+        file_name = build_filename(func.__name__, args)
         
-        if len(args) > 1 :
-            file_name = type(args[0]).__name__ +"_"+ func.__name__ +"_"+ hashlib.md5(str(args[1])).hexdigest() +'.pkl'
-        else :
-            file_name = func.__name__ +"_"+ hashlib.md5(str(args[0])).hexdigest() +'.pkl'
         if os.path.exists(file_name):
-            print "Reading cached", func.__name__,"function output.."
-            with open(file_name) as f:
+            print ("Reading cached", func.__name__, "function output..")
+            with open(file_name, 'rb') as f:
                 cache = pickle.load(f)
         else:
-            print 'Running', func.__name__,"and dumping the output to file.."
+            print ('Running', func.__name__, "and dumping the output to file..")
             cache = func(*args)
             # update the cache file
             with open(file_name, 'wb') as f:
@@ -37,8 +45,8 @@ import re
 
 def same_name(name1, name2):
     times_same = 0
-    parts_name1 = re.compile("\.*\s*").split(name1)
-    parts_name2 = re.compile("\.*\s*").split(name2)
+    parts_name1 = re.compile("\.+\s*").split(name1)
+    parts_name2 = re.compile("\.+\s*").split(name2)
     for part_i in parts_name1:
         for part_j in parts_name2:
             if similar(part_i,part_j) > 0.66:
@@ -80,7 +88,7 @@ class ProgressBar():
             perc_progress = self.__getPercProgress()
             estimate_final_duration = duration/(perc_progress + 0.0) * 100
             remaining = estimate_final_duration-duration            
-            print ("\tExecution at %4.1f%% done. Elapsed: %6.2fs. Remaining: %6.2fs." % (perc_progress, duration, remaining))   
+            print ("\tExecution at %4.1f%% done. Elapsed: %6.2fs. Remaining: %6.2fs." % (perc_progress, duration, remaining))
 
     def getTime(self):
         return self.times[1] - self.times[0]

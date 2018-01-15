@@ -12,7 +12,7 @@ class Show(Activity):
     
     def __init__(self, title, original_title, start, end, value, director):
         Activity.__init__(self, title, start, end, value)
-        self.director = director.replace(',', ' &').decode('utf-8')
+        self.director = director.replace(',', ' &')
         self.original_title = original_title
 #     def __repr__(self):
 #         return "%s director: %s" % (super(Show, self).__str__(), self.director)

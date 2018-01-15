@@ -18,19 +18,19 @@ class MovieRatingAssigner(object):
     def fetch_movie_by_name(self, film_name, director_name):
         if director_name == '' or film_name == '':
             return None
-        print '\tSearching', film_name, 'directed by:', director_name
+        print ('\tSearching', film_name, 'directed by:', director_name)
 
         fetched_films = self.ia.search_movie(film_name)
     
         for film in fetched_films:
             self.ia.update(film)
-            if film.data.has_key('director'):
+            if 'director' in film.data:
                 # take the first director
                 director = film['director'][0]
-                if utils.same_name(director['name'], director_name) and film.data.has_key('rating'):
+                if utils.same_name(director['name'], director_name) and 'rating' in film.data:
                     return film
                 else :
-                    print '\t\tOther director found:', director , 'continuing..'
+                    print ('\t\tOther director found:', director , 'continuing..')
         return None
             
     @utils.with_pickle
@@ -39,16 +39,16 @@ class MovieRatingAssigner(object):
         directors = set(directors)       
         pbar = utils.ProgressBar(len(directors))
         for name in directors:
-            print '\tAquiring informations about:', name
+            print ('\tAquiring informations about:', name)
             directors_with_one_name = self.ia.search_person(name) 
             if len(directors_with_one_name) == 0:
-                print '\t', name, ' not found in IMDb'
+                print ('\t', name, ' not found in IMDb')
                 continue
             
             director = max(directors_with_one_name, key=lambda x: utils.similar(x['name'], name) )
             self.ia.update(director)
             films = []
-            if director.data.has_key('director'):
+            if 'director' in director.data:
                 films += director[u'director']
 
             director_to_films[name] = films
@@ -59,7 +59,7 @@ class MovieRatingAssigner(object):
         imdb_film = None
         rating = 6.5
         votes = 1
-        print "\tRating:", film.name,"by:", film.director,"..."
+        print ("\tRating:", film.name, "by:", film.director, "...")
         #1) try to find if the we have already fetched the director
         if film.director in self.director_to_films:
             director_films = self.director_to_films[film.director]
@@ -71,15 +71,14 @@ class MovieRatingAssigner(object):
             # Try again by looking by movie name and match it with the director        
             imdb_film = self.fetch_movie_by_name(film.name, film.director)
             if imdb_film is None:
-                print '\t\tNo film named', film.name , 'directed by', film.director, 'found on IMDb. Assigning: 6.5'
+                print ('\t\tNo film named', film.name , 'directed by', film.director, 'found on IMDb. Assigning:', rating)
         else:
-            self.ia.update(imdb_film)
-            # print 'Imdb Rating for film:', film , 'is :', film['rating']
-            if imdb_film.data.has_key('rating'):
-                rating = float(imdb_film['rating']) 
-                votes = str(imdb_film['votes'])
+            self.ia.update(imdb_film, 'vote details')
+            if imdb_film.data.has_key('vote details'):
+                rating = float(imdb_film['demographics']['imdb users']['rating'])
+                votes = str(imdb_film['demographics']['imdb users']['votes'])
             else:
-                print '\t\tThe film named', film.name, 'directed by', film.director, 'not rated in IMDb! Assigning: 6.5'
+                print ('\t\tThe film named', film.name, 'directed by', film.director, 'not rated in IMDb! Assigning:', rating)
         film.setValue(rating)
         film.setVotes(votes)  
 
@@ -87,7 +86,7 @@ class MovieRatingAssigner(object):
 def assign_movie_rating(seances):
     assigner = MovieRatingAssigner([show.director for show in seances]) 
     rated_films = []
-    print '## We have', len(seances), 'films to rate!'
+    print ('## We have', len(seances), 'films to rate!')
     pbar = utils.ProgressBar(len(seances))
     for film in seances:
         assigner.rate_one(film)
