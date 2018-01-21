@@ -15,22 +15,21 @@ class MovieRatingAssigner(object):
         self.ia = IMDb()
         self.director_to_films = self.fetch_directors(directors)
     
-    def fetch_movie_by_name(self, film_name, director_name):
-        if director_name == '' or film_name == '':
+    def fetch_movie_by_title_and_director(self, title, director_name):
+        if title == '' or director_name == '':
             return None
-        print ('\tSearching', film_name, 'directed by:', director_name)
 
-        fetched_films = self.ia.search_movie(film_name)
-    
-        for film in fetched_films:
-            self.ia.update(film)
-            if 'director' in film.data:
+        max_update = 5
+        for film_i in self.ia.search_movie(title):
+            max_update=max_update-1
+            self.ia.update(film_i)
+            if 'director' in film_i.data:
                 # take the first director
-                director = film['director'][0]
-                if utils.same_name(director['name'], director_name) and 'rating' in film.data:
-                    return film
-                else :
-                    print ('\t\tOther director found:', director , 'continuing..')
+                director = film_i['director'][0]
+                if utils.same_name(director['name'], director_name):
+                    return film_i
+            if max_update== 0:
+                break
         return None
             
     @utils.with_pickle
@@ -54,31 +53,48 @@ class MovieRatingAssigner(object):
             director_to_films[name] = films
             pbar.progress()
         return director_to_films
-    
-    def rate_one(self, film):    
-        imdb_film = None
+
+    def retrive_regional_title(self, film, country):
+        self.ia.update(film,'akas')
+        if 'akas from release info' in film.data:
+            various_title = film.data['akas from release info']
+            for t in various_title:
+                nation = t.split('::')[0]
+                name   = t.split('::')[1]
+                if nation == country :
+                    return name
+        return None
+
+    def retrive_cached_film(self, film):
+        
+        if film.director in self.director_to_films:
+            for film_i in self.director_to_films[film.director]: 
+                if utils.similar(film_i['title'], film.name) >= 0.6:
+                    return film_i
+                if utils.similar(film_i['title'], film.cine_title) >= 0.6:
+                    return film_i
+        # Nothing found..
+        return None
+
+    def rate_one(self, film):
         rating = 6.5
         votes = 1
-        print ("\tRating:", film.name, "by:", film.director, "...")
-        #1) try to find if the we have already fetched the director
-        if film.director in self.director_to_films:
-            director_films = self.director_to_films[film.director]
-            if len(director_films) > 0: 
-                imdb_film = max(director_films, key=lambda x: utils.similar(x['title'], film.name) )
+        print ("\tRating:", film.name, "by:", film.director)    
         
-        #2) If nothing acceptable has been found try to fetch the single movie
-        if imdb_film is None or utils.similar(imdb_film['title'], film.name) <= 0.7:
-            # Try again by looking by movie name and match it with the director        
-            imdb_film = self.fetch_movie_by_name(film.name, film.director)
+        imdb_film = self.retrive_cached_film(film)
+                
+        if imdb_film is None:
+            imdb_film = self.fetch_movie_by_title_and_director(film.cine_title, film.director)
             if imdb_film is None:
-                print ('\t\tNo film named', film.name , 'directed by', film.director, 'found on IMDb. Assigning:', rating)
+                imdb_film = self.fetch_movie_by_title_and_director(film.name, film.director)
+            
+        if imdb_film is None:
+            print ('\t\tThe film named', film.name, 'directed by', film.director, 'not rated in IMDb! Assigning:', rating)
         else:
             self.ia.update(imdb_film, 'vote details')
-            if imdb_film.data.has_key('vote details'):
+            if 'demographics' in imdb_film.data:
                 rating = float(imdb_film['demographics']['imdb users']['rating'])
                 votes = str(imdb_film['demographics']['imdb users']['votes'])
-            else:
-                print ('\t\tThe film named', film.name, 'directed by', film.director, 'not rated in IMDb! Assigning:', rating)
         film.setValue(rating)
         film.setVotes(votes)  
 

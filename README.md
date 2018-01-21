@@ -11,7 +11,7 @@ pip install httplib2
 pip install lxml
 pip install requests
 pip install --upgrade google-api-python-client
-pip install IMDbPY==5.1.1
+sudo pip-3.6 install git+https://github.com/alberanid/imdbpy -U
 
 # Credentials
 Create a credential folder in the same place where you execute the program.
