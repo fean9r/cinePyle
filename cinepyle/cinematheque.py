@@ -67,30 +67,33 @@ def scrape_cinematheque_films(url_to_scrape):
             l_realisateur = film.xpath('span[@class="realisateur"]/text()')
             if len(l_realisateur) >= 1:
                 realisateur = extract_director(l_realisateur)
-            
+            else :
+                continue
             # Calendar_box Parsing stage
             i=i+1
             calendar_box = show_tree.xpath('//var[@class="atc_event"]')[0]
             
             # original_title Parsing stage
             i=i+1
-            common_title = calendar_box.xpath('var[@class="atc_title"]/text()')[0]
-            l_original_title = show_tree.xpath('//span[@class="sub custom-text-color-light"]/text()')
-            
+            cinemath_title_l = calendar_box.xpath('var[@class="atc_title"]/text()')
+            original_title_l = show_tree.xpath('//span[@class="sub custom-text-color-light"]/text()')
+ 
             i=i+1
-            if len(l_original_title) >= 1:
-                original_title = l_original_title[0]
+            if not original_title_l:
+                original_title = cinemath_title_l[0]
+                cinemath_title = cinemath_title_l[0]
             else:
-                original_title = common_title
-            
+                original_title = original_title_l[0]
+                cinemath_title = cinemath_title_l[0]
+
             date_start = calendar_box.xpath('var[@class="atc_date_start"]/text()')[0]
             i=i+1
             date_end = calendar_box.xpath('var[@class="atc_date_end"]/text()')[0]
             i=i+1
             timezone = calendar_box.xpath('var[@class="atc_timezone"]/text()')[0]
 
-            show_map['cinemath_title'] = cinemath_title
             show_map['original_title'] = original_title
+            show_map['cinemath_title'] = cinemath_title
             show_map['start'] = date_start
             show_map['end'] = date_end
             show_map['timezone'] = timezone
