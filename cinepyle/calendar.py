@@ -108,7 +108,7 @@ class CalendarManager(object):
                             'Work'             :'07q9ft47r02q56sid2fub34dtc@group.calendar.google.com'
                         }
         self.calendar = GoogleCalendar(calendars_to_ids)
-        
+
     def retreiveEvents(self, retrive_start , retrive_end):
         activities = []
         events = self.calendar.getEvents(retrive_start , retrive_end)
@@ -120,17 +120,15 @@ class CalendarManager(object):
             end   = make_internal_time(event_i['end']['dateTime'] if 'dateTime' in event_i['end'] else event_i['end']['date'])  
             activities.append(Activity(title, start, end, 0))            
         return activities
-    
+
 def write_cvs(events, file_name ='calendar.cvs' ):
     header = 'Subject,Start Date,Start Time,End Date,End Time,Description,Location\n'
     cv_out = header
     for event in events:
-        cv_out += event.name +','+event.interval.start_date() +','+event.interval.start_time()+','+event.interval.end_date() +','+event.interval.end_time()+','+event.director+' IMDb Rating:'+str(event.value)+','+'Cinematheque' '\n'
-        #+','+event.interval.start_date()+','+event.interval.start_time()+','+event.interval.end_date()+','+event.interval.end_time()+','+event.director+' IMDb Rating',event.value,','+'Cinematheque'
-    print (cv_out)
-    #with open(file_name, 'w') as cvs_file:
-    #    cvs_file.write(cv_out)
-            
+        cv_out += event.cine_title +','+event.interval.start_date() +','+event.interval.start_time()+','+event.interval.end_date() +','+event.interval.end_time()+','+event.director+' IMDb Rating:'+str(event.value)+' #Votes:'+str(event.votes)+',Cinematheque' '\n'
+    with open(file_name, "wb") as cvs_file:
+        cvs_file.write(cv_out.encode("UTF-8"))
+
 def filter_overlapping_events(confirmed_events, unconfirmed_events):
     print ('Starting with', len(unconfirmed_events), 'activities before busy periods filtering.') 
     for event in confirmed_events:
