@@ -153,8 +153,8 @@ def retreive_month_seances(month):
     return list(map(lambda x:make_show(x), calendar.getEvents(month)))
 
 def retreive_seances(start, end):
-    all_seances= []
+    all_seances = []
     months = compute_months(start, end)
     for m_i in months:
-        all_seances += retreive_month_seances (m_i) 
+        all_seances.append(retreive_month_seances(m_i))
     return all_seances

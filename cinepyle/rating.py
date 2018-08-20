@@ -99,13 +99,20 @@ class MovieRatingAssigner(object):
         film.setVotes(votes)  
 
 @utils.with_pickle
-def assign_movie_rating(seances):
-    assigner = MovieRatingAssigner([show.director for show in seances]) 
+def assign_rating_to_month_seances(month_i_seances):
+    assigner = MovieRatingAssigner([show.director for show in month_i_seances]) 
+    num_seances = len(month_i_seances)
+    print ('## We have', num_seances, 'films to rate in month!')
     rated_films = []
-    print ('## We have', len(seances), 'films to rate!')
-    pbar = utils.ProgressBar(len(seances))
-    for film in seances:
+    pbar = utils.ProgressBar(num_seances)
+    for film in month_i_seances:
         assigner.rate_one(film)
         rated_films.append(film)
         pbar.progress()
+    return rated_films
+
+def assign_movie_rating(months_seances):
+    rated_films = []
+    for month_i_seances in months_seances:
+        rated_films += assign_rating_to_month_seances(month_i_seances)
     return rated_films
