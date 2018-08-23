@@ -4,6 +4,7 @@ Created on Jun 19, 2017
 @author: ibreschi
 '''
 from . import utils
+import concurrent.futures
 from imdb import IMDb
 
 class MovieRatingAssigner(object):
@@ -13,8 +14,9 @@ class MovieRatingAssigner(object):
 
     def __init__(self, directors):
         self.ia = IMDb()
-        self.director_to_films = self.fetch_directors(directors)
-    
+        self.IMDB_MAX_WORKERS = 4
+        self.director_to_films = self.search_many(directors)
+
     def fetch_movie_by_title_and_director(self, title, director_name):
         if title == '' or director_name == '':
             return None
@@ -31,28 +33,34 @@ class MovieRatingAssigner(object):
             if max_update== 0:
                 break
         return None
-            
-    @utils.with_pickle
-    def fetch_directors(self, directors):
-        director_to_films = {}
-        directors = set(directors)       
-        pbar = utils.ProgressBar(len(directors))
-        for name in directors:
-            print ('\tAquiring informations about:', name)
-            directors_with_one_name = self.ia.search_person(name) 
-            if len(directors_with_one_name) == 0:
-                print ('\t', name, ' not found in IMDb')
-                continue
-            
-            director = max(directors_with_one_name, key=lambda x: utils.similar(x['name'], name) )
-            self.ia.update(director)
-            films = []
-            if 'director' in director.data:
-                films += director[u'director']
 
-            director_to_films[name] = films
-            pbar.progress()
-        return director_to_films
+    def search_one(self, name):
+        print ('\tAquiring informations about:', name)
+        directors_with_similar_name = self.ia.search_person(name) 
+        if len(directors_with_similar_name) == 0:
+            print ('\t', name, ' not found in IMDb')
+            return (None, [])
+        
+        director = max(directors_with_similar_name, key=lambda x: utils.similar(x['name'], name) )
+        self.ia.update(director)
+        films = []
+        try:
+            roles_to_film = director[u'filmography'][0]
+            #TODO: add other roles to films we take only the directors
+            if 'director' in roles_to_film:
+                films = roles_to_film[u'director']
+        except KeyError:
+            print('ERROR. Impossible to retreive', name, 'filmography maybe the IMDB interface has changed!')
+        return (name, films)
+
+    @utils.with_pickle
+    def search_many(self, directors):
+        directors = set(directors)       
+        print ('## Searching', len(directors), 'directors.')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.IMDB_MAX_WORKERS) as executor:
+            results = executor.map(self.search_one, directors)
+            director_to_films= dict(results)
+            return director_to_films
 
     def retrive_regional_title(self, film, country):
         self.ia.update(film,'akas')
@@ -66,7 +74,6 @@ class MovieRatingAssigner(object):
         return None
 
     def retrive_cached_film(self, film):
-        
         if film.director in self.director_to_films:
             for film_i in self.director_to_films[film.director]: 
                 if utils.similar(film_i['title'], film.name) >= 0.6:
@@ -97,22 +104,19 @@ class MovieRatingAssigner(object):
                 votes = str(imdb_film['demographics']['imdb users']['votes'])
         film.setValue(rating)
         film.setVotes(votes)  
+        return film
 
-@utils.with_pickle
-def assign_rating_to_month_seances(month_i_seances):
-    assigner = MovieRatingAssigner([show.director for show in month_i_seances]) 
-    num_seances = len(month_i_seances)
-    print ('## We have', num_seances, 'films to rate in month!')
-    rated_films = []
-    pbar = utils.ProgressBar(num_seances)
-    for film in month_i_seances:
-        assigner.rate_one(film)
-        rated_films.append(film)
-        pbar.progress()
-    return rated_films
+    @utils.with_pickle
+    def rate_many(self, seances):
+        print ('## Rating', len(seances), 'films.')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.IMDB_MAX_WORKERS) as executor:
+            results = executor.map(self.rate_one, seances)
+            return list(results)
 
 def assign_movie_rating(months_seances):
     rated_films = []
     for month_i_seances in months_seances:
-        rated_films += assign_rating_to_month_seances(month_i_seances)
+        directors = [show.director for show in month_i_seances]
+        assigner = MovieRatingAssigner(directors) 
+        rated_films += assigner.rate_many(month_i_seances)
     return rated_films
