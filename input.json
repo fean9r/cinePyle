@@ -1,0 +1,13 @@
+{
+	"start":"2020/01/01",
+	"end":"2020/02/29",
+  "max_per_day" : 1,
+  "max_per_week" : 3,
+	"watch" : [
+		"Mariage à l'italienne ", "Pain, amour et fantaisie", "Par-dessus les moulins",
+		"Pères et fils", "Dommage que tu sois une canaille", "Le Général Della Rovere",
+		"Le Voleur de bicyclette", "Le Jardin des Finzi-Contini", "La Ciociara",
+		"Umberto D.", "Hier, aujourd'hui et demain",""
+	],
+	"avoid" : ["Rebecca", "Madame de..."]
+}

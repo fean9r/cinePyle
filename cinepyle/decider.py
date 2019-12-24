@@ -7,8 +7,8 @@ from opchoice import scheduler
 
 
 
-def decide_best_films(seances, avoid_list, watch_list, max_per_day=1,max_per_week=3 ):
-    # Set the decision constraints 
+def decide_best_films(seances, avoid_list, watch_list, max_per_day,max_per_week):
+    # Set the decision constraints
     constraints = scheduler.SchedulerConstraints()
     constraints.max_activity_by_day = max_per_day
     constraints.max_activity_by_week = max_per_week
@@ -22,7 +22,7 @@ def decide_best_films(seances, avoid_list, watch_list, max_per_day=1,max_per_wee
                 constraints.addActivityToAvoid(film.name)
         if found == 0:
             print("\tNot found", avoid)
-    
+
     for watch in watch_list :
         found = 0
         for film in seances:
@@ -32,8 +32,8 @@ def decide_best_films(seances, avoid_list, watch_list, max_per_day=1,max_per_wee
                 constraints.addActivityToPerform(film.name)
         if found == 0:
             print("\tNot found", watch)
-    
+
     # Get the best cinematheque_shows with my agenda and decision params
     decision_maker = scheduler.Scheduler(constraints)
     return decision_maker.make_decision(seances)
-    
+

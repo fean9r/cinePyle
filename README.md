@@ -1,17 +1,8 @@
 
 # INSTALLING
 
-sudo apt install python-pip
-pip install --upgrade pip
-pip install pytz
-pip install pulp
-pip install python-graph-core
-pip install python-dateutil 
-pip install httplib2
-pip install lxml
-pip install requests
-pip install --upgrade google-api-python-client
-sudo pip-3.6 install git+https://github.com/alberanid/imdbpy -U
+pip install -r requirements.txt
+pip install .
 
 # Credentials
 Create a credential folder in the same place where you execute the program.
